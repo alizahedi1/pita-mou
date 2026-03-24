@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pita mou</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Tenor+Sans&family=Pinyon+Script&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0c0a;
+    --bg2: #161210;
+    --surface: #1c1714;
+    --polaroid: #f5f0e8;
+    --polaroid-inner: #ede8df;
+    --gold: #c9a96e;
+    --gold-dim: #8a6f45;
+    --cream: #f0e8d8;
+    --ink: #1a1410;
+    --text-dim: #6b5c48;
+    --shadow: rgba(0,0,0,0.7);
+    --glow: rgba(201, 169, 110, 0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--cream);
+    font-family: 'EB Garamond', serif;
+    overflow-x: hidden;
+  }
+
+  /* Grain */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    background-size: 256px;
+    pointer-events: none;
+    z-index: 1000;
+    mix-blend-mode: screen;
+    opacity: 0.6;
+  }
+
+  /* Vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 100%);
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ─── PASSWORD ─── */
+  #password-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    gap: 2.5rem;
+    transition: opacity 1s ease;
+  }
+
+  #password-screen.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .pw-title {
+    font-family: 'Pinyon Script', cursive;
+    font-size: clamp(3rem, 8vw, 5rem);
+    color: var(--gold);
+    letter-spacing: 0.02em;
+    text-shadow: 0 0 60px rgba(201,169,110,0.3);
+    line-height: 1;
+  }
+
+  .pw-subtitle {
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.5em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    margin-top: -1.5rem;
+  }
+
+  .pw-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+  }
+
+  #pw-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--gold-dim);
+    padding: 0.6rem 1rem;
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 0.85rem;
+    color: var(--cream);
+    text-align: center;
+    letter-spacing: 0.4em;
+    outline: none;
+    width: 200px;
+    transition: border-color 0.4s;
+    text-transform: lowercase;
+  }
+
+  #pw-input::placeholder {
+    color: var(--gold-dim);
+    opacity: 0.4;
+    letter-spacing: 0.2em;
+  }
+
+  #pw-input:focus { border-bottom-color: var(--gold); }
+
+  #pw-error {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    color: #9a5a3a;
+    opacity: 0;
+    transition: opacity 0.3s;
+    height: 1rem;
+  }
+
+  #pw-error.show { opacity: 1; }
+
+  .pw-btn {
+    background: transparent;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    padding: 0.7rem 2.5rem;
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.4s;
+    margin-top: 0.3rem;
+  }
+
+  .pw-btn:hover {
+    background: var(--gold);
+    color: var(--ink);
+    border-color: var(--gold);
+  }
+
+  /* ─── APP ─── */
+  #app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 1.5rem 5rem;
+    opacity: 0;
+    transition: opacity 1.2s ease 0.3s;
+  }
+
+  #app.visible { opacity: 1; }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 3.5rem;
+  }
+
+  .eyebrow {
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.5em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-family: 'Pinyon Script', cursive;
+    font-size: clamp(3.5rem, 10vw, 6rem);
+    color: var(--gold);
+    font-weight: 400;
+    line-height: 1;
+    text-shadow: 0 0 80px rgba(201,169,110,0.2);
+    letter-spacing: 0.02em;
+  }
+
+  .header-rule {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: center;
+    margin: 1.2rem auto 0;
+  }
+
+  .header-rule span {
+    width: 40px;
+    height: 1px;
+    background: var(--gold-dim);
+    opacity: 0.4;
+    display: block;
+  }
+
+  .header-rule em {
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.4em;
+    color: var(--gold-dim);
+    opacity: 0.5;
+    text-transform: uppercase;
+    font-style: normal;
+  }
+
+  .counter {
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: var(--gold-dim);
+    opacity: 0.5;
+    margin-top: 1rem;
+    text-transform: uppercase;
+  }
+
+  /* ─── STAGE ─── */
+  #stage {
+    position: relative;
+    width: min(480px, 92vw);
+    min-height: 640px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 3.5rem;
+  }
+
+  /* Ghost cards */
+  .ghost-card {
+    position: absolute;
+    width: min(400px, 84vw);
+    background: var(--polaroid);
+    pointer-events: none;
+  }
+
+  .ghost-card:nth-child(1) {
+    transform: rotate(-3.5deg) translateY(8px) translateX(-5px);
+    opacity: 0.15;
+    z-index: 1;
+    padding: 16px 16px 16px;
+  }
+
+  .ghost-card:nth-child(2) {
+    transform: rotate(2.5deg) translateY(12px) translateX(7px);
+    opacity: 0.08;
+    z-index: 0;
+    padding: 16px 16px 16px;
+  }
+
+  .ghost-inner {
+    width: 100%;
+    aspect-ratio: 4/5;
+    background: var(--polaroid-inner);
+  }
+
+  /* Main Polaroid — large */
+  .polaroid {
+    position: relative;
+    z-index: 10;
+    background: var(--polaroid);
+    padding: 16px 16px 16px;
+    box-shadow:
+      0 4px 8px rgba(0,0,0,0.4),
+      0 16px 48px rgba(0,0,0,0.6),
+      0 32px 80px rgba(0,0,0,0.4),
+      0 0 120px var(--glow);
+    width: min(400px, 84vw);
+    transform-origin: center center;
+    animation: revealCard 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes revealCard {
+    0% {
+      opacity: 0;
+      transform: var(--card-tilt) translateY(80px) scale(0.88);
+    }
+    50% { opacity: 1; }
+    100% {
+      opacity: 1;
+      transform: var(--card-tilt) translateY(0) scale(1);
+    }
+  }
+
+  .polaroid-photo {
+    width: 100%;
+    aspect-ratio: 4/5;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* ─── RESHUFFLE ─── */
+  #reshuffle-msg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s;
+  }
+
+  #reshuffle-msg.show { opacity: 1; }
+
+  #reshuffle-msg span {
+    font-family: 'Pinyon Script', cursive;
+    font-size: 1.8rem;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 30px rgba(201,169,110,0.4);
+  }
+
+  /* ─── CTA ─── */
+  .cta-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+  }
+
+  #turn-btn {
+    position: relative;
+    background: transparent;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    padding: 1.1rem 3.5rem;
+    font-family: 'EB Garamond', serif;
+    font-size: 1.1rem;
+    font-style: italic;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    overflow: hidden;
+  }
+
+  #turn-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gold);
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: -1;
+  }
+
+  #turn-btn:hover {
+    color: var(--ink);
+    border-color: var(--gold);
+  }
+
+  #turn-btn:hover::before { transform: translateY(0); }
+  #turn-btn:active { transform: scale(0.97); }
+
+  .hint {
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    color: var(--gold-dim);
+    opacity: 0.4;
+    text-transform: uppercase;
+  }
+
+  /* Progress dots */
+  .progress-dots {
+    display: flex;
+    gap: 7px;
+    margin-top: 1.5rem;
+  }
+
+  .dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--gold);
+    opacity: 0.15;
+    transition: opacity 0.4s, transform 0.3s;
+  }
+
+  .dot.seen { opacity: 0.45; }
+  .dot.current { opacity: 1; transform: scale(1.5); }
+
+  /* Footer */
+  footer {
+    margin-top: auto;
+    padding-top: 4rem;
+    font-family: 'Tenor Sans', sans-serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.4em;
+    color: var(--gold-dim);
+    opacity: 0.25;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 480px) {
+    #stage { min-height: 560px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PASSWORD -->
+<div id="password-screen">
+  <div class="pw-title">pita mou</div>
+  <div class="pw-subtitle">a private collection</div>
+  <div class="pw-form">
+    <input type="password" id="pw-input" placeholder="your name" autocomplete="off" />
+    <div id="pw-error">try again, my love</div>
+    <button class="pw-btn" onclick="checkPassword()">Enter</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="eyebrow">two years</div>
+    <h1>pita mou</h1>
+    <div class="header-rule">
+      <span></span>
+      <em>a love archive</em>
+      <span></span>
+    </div>
+    <div class="counter" id="counter">— memories —</div>
+  </header>
+
+  <div id="stage">
+    <div class="ghost-card"><div class="ghost-inner"></div></div>
+    <div class="ghost-card"><div class="ghost-inner"></div></div>
+    <div id="card-area"></div>
+    <div id="reshuffle-msg"><span>from the beginning…</span></div>
+  </div>
+
+  <div class="cta-wrap">
+    <button id="turn-btn" onclick="nextCard()">Turn the Page</button>
+    <div class="hint">or press → on your keyboard</div>
+    <div class="progress-dots" id="dots"></div>
+  </div>
+
+  <footer>✦ swipe or press → for next</footer>
+</div>
+
+<script>
+  // ─────────────────────────────────────────
+  // PHOTOS — paste your GitHub raw photo URLs here
+  // Each entry: { src: "URL" }
+  // ─────────────────────────────────────────
+  const photos = [
+    { src: "https://picsum.photos/seed/love1/400/500" },
+    { src: "https://picsum.photos/seed/love2/400/500" },
+    { src: "https://picsum.photos/seed/love3/400/500" },
+    { src: "https://picsum.photos/seed/love4/400/500" },
+    { src: "https://picsum.photos/seed/love5/400/500" },
+    { src: "https://picsum.photos/seed/love6/400/500" },
+  ];
+
+  let deck = [], currentIndex = -1, seen = [];
+
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function buildDots() {
+    const c = document.getElementById('dots');
+    c.innerHTML = '';
+    photos.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'dot';
+      d.id = `dot-${i}`;
+      c.appendChild(d);
+    });
+  }
+
+  function updateDots() {
+    photos.forEach((_, i) => {
+      const d = document.getElementById(`dot-${i}`);
+      if (!d) return;
+      d.className = 'dot';
+      if (seen.includes(i)) d.classList.add('seen');
+      if (i === deck[currentIndex]?.origIndex) d.classList.add('current');
+    });
+  }
+
+  function nextCard() {
+    currentIndex++;
+    if (currentIndex >= deck.length) { showReshuffle(); return; }
+
+    const photo = deck[currentIndex];
+    const tilts = [-3.5, -2.5, -2, -1, 1, 2, 2.5, 3.5];
+    const tilt = tilts[Math.floor(Math.random() * tilts.length)];
+
+    const area = document.getElementById('card-area');
+    area.innerHTML = '';
+
+    const card = document.createElement('div');
+    card.className = 'polaroid';
+    card.style.setProperty('--card-tilt', `rotate(${tilt}deg)`);
+    card.style.transform = `rotate(${tilt}deg)`;
+
+    const img = document.createElement('img');
+    img.className = 'polaroid-photo';
+    img.src = photo.src;
+    img.alt = 'a memory';
+
+    card.appendChild(img);
+    area.appendChild(card);
+    seen.push(photo.origIndex);
+    updateDots();
+  }
+
+  function showReshuffle() {
+    const msg = document.getElementById('reshuffle-msg');
+    document.getElementById('card-area').innerHTML = '';
+    msg.classList.add('show');
+    setTimeout(() => {
+      msg.classList.remove('show');
+      deck = shuffle(photos.map((p, i) => ({ ...p, origIndex: i })));
+      currentIndex = -1;
+      seen = [];
+      updateDots();
+      nextCard();
+    }, 2000);
+  }
+
+  function checkPassword() {
+    const val = document.getElementById('pw-input').value.trim().toLowerCase();
+    const err = document.getElementById('pw-error');
+    if (val === 'dionysia') {
+      document.getElementById('password-screen').classList.add('fade-out');
+      setTimeout(() => {
+        document.getElementById('password-screen').style.display = 'none';
+        document.getElementById('app').classList.add('visible');
+      }, 1000);
+    } else {
+      err.classList.add('show');
+      document.getElementById('pw-input').value = '';
+      setTimeout(() => err.classList.remove('show'), 2500);
+    }
+  }
+
+  document.getElementById('pw-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkPassword();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') nextCard();
+  });
+
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    if (touchStartX - e.changedTouches[0].clientX > 50) nextCard();
+  });
+
+  deck = shuffle(photos.map((p, i) => ({ ...p, origIndex: i })));
+  document.getElementById('counter').textContent = `${photos.length} memories`;
+  buildDots();
+</script>
+</body>
+</html>
